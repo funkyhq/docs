@@ -1,0 +1,31 @@
+---
+title: "Model"
+description: "Choose the model provider and model that power an agent."
+---
+
+Every agent configuration includes a model provider and model ID. Funky
+currently supports the following providers and models:
+
+| Provider | Models |
+| --- | --- |
+| Anthropic (`anthropic`) | `claude-opus-4-8`<br />`claude-sonnet-5` |
+| Together AI (`togetherai`) | `zai-org/GLM-5.2`<br />`deepseek-ai/DeepSeek-V4-Pro`<br />`Qwen/Qwen3.7-Max`<br />`google/gemma-4-31B-it` |
+
+The currently available model IDs are maintained in the
+[Funky model catalog](https://github.com/funkyhq/funky/blob/main/apps/web/src/lib/models.ts).
+Use that catalog as the source of truth when creating an agent.
+
+For example, this configuration selects Claude Sonnet 5 from Anthropic:
+
+```json
+{
+  "model": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-5"
+  }
+}
+```
+
+<Note>
+  Support for more model providers is coming soon.
+</Note>
