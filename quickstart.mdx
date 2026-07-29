@@ -1,0 +1,208 @@
+---
+title: "Quick Start"
+description: "Create an agent, start a session, and send your first message."
+---
+
+This guide creates a reusable agent and environment, starts a session, and
+prints the agent's response to its first message.
+
+## Prerequisites
+
+You need:
+
+- A [Funky API key](https://platform.funky.dev)
+- Python 3.10 or newer, or Node.js 20 or newer
+
+## 1. Install the SDK
+
+<Tabs>
+  <Tab title="Python">
+    ```bash
+    pip install funky-sdk
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```bash
+    npm install funky-sdk
+    ```
+  </Tab>
+</Tabs>
+
+## 2. Set your API key
+
+The SDK reads your API key from the `FUNKY_API_KEY` environment variable.
+
+```bash
+export FUNKY_API_KEY="fk_..."
+```
+
+Keep your API key out of source control. In production, load it from your
+platform's secret manager.
+
+## 3. Create your first session
+
+Create `quickstart.py` for Python or `quickstart.ts` for TypeScript. Add the
+snippet from each step to the file, in order.
+
+<Steps>
+  <Step title="Create an agent">
+    An agent defines the model, system prompt, and tool policy. You can reuse the
+    same agent across many sessions.
+
+    <Tabs>
+      <Tab title="Python">
+        ```python
+        from funky import Funky
+
+        funky = Funky()
+
+        agent = funky.agents.create(
+            name="Repository investigator",
+            system_prompt=(
+                "You are a careful coding agent. "
+                "Verify claims with tools."
+            ),
+            model={
+                "provider": "anthropic",
+                "model": "claude-sonnet-5",
+            },
+            tool_policy={"max_iterations": 20},
+        )
+        ```
+      </Tab>
+      <Tab title="TypeScript">
+        ```typescript
+        import { Funky } from "funky-sdk";
+
+        const funky = new Funky();
+
+        const agent = await funky.agents.create({
+          name: "Repository investigator",
+          system_prompt: "You are a careful coding agent. Verify claims with tools.",
+          model: {
+            provider: "anthropic",
+            model: "claude-sonnet-5",
+          },
+          tool_policy: { max_iterations: 20 },
+        });
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Create an environment">
+    An environment configures the sandbox where the agent runs. This example
+    limits outbound network access to GitHub.
+
+    <Tabs>
+      <Tab title="Python">
+        ```python
+        environment = funky.environments.create(
+            name="github-access",
+            network={
+                "type": "limited",
+                "allowed_hosts": [
+                    "github.com",
+                    "*.githubusercontent.com",
+                ],
+            },
+        )
+        ```
+      </Tab>
+      <Tab title="TypeScript">
+        ```typescript
+        const environment = await funky.environments.create({
+          name: "github-access",
+          network: {
+            type: "limited",
+            allowed_hosts: [
+              "github.com",
+              "*.githubusercontent.com",
+            ],
+          },
+        });
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Start a session">
+    A session connects the agent to the environment for one independent task or
+    conversation. Wait until its sandbox is ready before sending work.
+
+    <Tabs>
+      <Tab title="Python">
+        ```python
+        session = funky.sessions.create(
+            agent=agent.id,
+            environment_id=environment.id,
+            title="Investigate an issue",
+        )
+
+        funky.sessions.wait_until_ready(session.id, timeout=180)
+        ```
+      </Tab>
+      <Tab title="TypeScript">
+        ```typescript
+        const session = await funky.sessions.create({
+          agent: agent.id,
+          environment_id: environment.id,
+          title: "Investigate an issue",
+        });
+
+        await funky.sessions.waitUntilReady(session.id);
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Send a message">
+    `run_turn()` and `runTurn()` send the message, follow session events until
+    the turn completes, and return the agent's response.
+
+    <Tabs>
+      <Tab title="Python">
+        ```python
+        result = funky.sessions.run_turn(
+            session.id,
+            content=(
+                "Inspect the repository and identify the root cause "
+                "of the reported issue."
+            ),
+        )
+
+        print(result.output_text)
+        funky.close()
+        ```
+
+        Run the completed file:
+
+        ```bash
+        python quickstart.py
+        ```
+      </Tab>
+      <Tab title="TypeScript">
+        ```typescript
+        const result = await funky.sessions.runTurn(session.id, {
+          content:
+            "Inspect the repository and identify the root cause of the reported issue.",
+        });
+
+        console.log(result.output_text);
+        funky.close();
+        ```
+
+        Run the completed file with your project's TypeScript runner. For
+        example:
+
+        ```bash
+        npm install --save-dev tsx
+        npx tsx quickstart.ts
+        ```
+      </Tab>
+    </Tabs>
+  </Step>
+</Steps>
+
+In an application, create agents and environments during setup and store their
+IDs. Reuse those IDs when you start a new session for each independent task.

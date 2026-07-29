@@ -1,8 +1,46 @@
 ---
-title: "Introduction"
-description: "Welcome to our documentation."
+title: "Overview"
+description: "Run durable AI agents without managing agent infrastructure."
 ---
 
-# Welcome
+Funky is a durable runtime for agent swarms. Define how an agent
+should behave, choose where it should run, and start sessions for individual
+tasks. Funky handles the execution infrastructure and keeps each session's
+history and state available as the agent works.
 
-Start building your documentation here.
+## Core concepts
+
+| Concept | Description |
+| --- | --- |
+| **Agent** | A reusable definition of an agent's model, system prompt, tool policy, and runtime. Agents are versioned, so a session continues to use the configuration it started with. |
+| **Environment** | A reusable configuration for the sandbox where an agent runs. Environments control execution settings such as network access. |
+| **Session** | A durable instance of an agent working in an environment. A session represents one independent task or conversation and records its messages, tool calls, and results. |
+
+Create agents and environments once, then reuse them across sessions. Start a
+new session for each independent task or durable conversation.
+
+## How it works
+
+1. **Create an agent.** Choose a model and define its instructions and tool
+   policy.
+2. **Create an environment.** Configure the sandbox and the network access the
+   agent needs.
+3. **Start a session.** Reference the agent and environment to create an
+   isolated run for a task.
+4. **Send a message.** Give the session its first task. The agent can use tools
+   and return its response while Funky records the session's events.
+
+## When to use Funky
+
+Funky is a good fit when your agents need:
+
+- **Long-horizon execution** for tasks that take many steps or run for minutes
+  or hours
+- **Background operation** that continues beyond the lifetime of a web request,
+  worker, or local process
+- **Durability** so a session can pause, recover from infrastructure failures,
+  and resume from its recorded state
+- **High concurrency** for running many independent sessions or coordinating
+  large agent swarms in parallel
+
+Ready to run an agent? Continue to the [Quick Start](/quickstart).
