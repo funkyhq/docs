@@ -1,0 +1,68 @@
+---
+title: "Network"
+description: "Control outbound network access from an agent environment."
+---
+
+Network configuration controls which domains an agent can access from its
+environment. By default, network access is unrestricted.
+
+## Unrestricted access
+
+Omit `network` when you create an environment to use unrestricted access:
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    environment = funky.environments.create(
+        name="development",
+    )
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript
+    const environment = await funky.environments.create({
+      name: "development",
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Allow specific domains
+
+Set the network type to `limited` and add each domain the agent needs to
+`allowed_hosts`. Use a wildcard to allow subdomains.
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    environment = funky.environments.create(
+        name="github-access",
+        network={
+            "type": "limited",
+            "allowed_hosts": [
+                "github.com",
+                "*.githubusercontent.com",
+            ],
+        },
+    )
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript
+    const environment = await funky.environments.create({
+      name: "github-access",
+      network: {
+        type: "limited",
+        allowed_hosts: [
+          "github.com",
+          "*.githubusercontent.com",
+        ],
+      },
+    });
+    ```
+  </Tab>
+</Tabs>
+
+Only the listed domains are available to sessions that use the environment.
+Add every domain required by package registries, APIs, source hosts, and other
+external services the agent needs.

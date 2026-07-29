@@ -22,6 +22,14 @@
           "agent-config/tools",
           "agent-config/skills"
         ]
+      },
+      {
+        "group": "Environment Config",
+        "pages": [
+          "environment-config/packages",
+          "environment-config/network",
+          "environment-config/secret-manager"
+        ]
       }
     ]
   }
