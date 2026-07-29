@@ -1,0 +1,41 @@
+---
+title: "Harness"
+description: "Choose how an agent runs each turn."
+---
+
+A harness controls the agent loop that processes messages, calls tools, and
+returns results. Funky currently supports two harnesses:
+
+| Harness | Runtime type | Notes |
+| --- | --- | --- |
+| **Funky native** | `native` | Funky's built-in, provider-neutral agent loop |
+| **Claude Code** | `claude-code` | Runs turns through the Claude Agent SDK and requires an Anthropic model |
+
+The Funky native harness is used when `runtime` is omitted. You can also select
+it explicitly:
+
+```json
+{
+  "runtime": {
+    "type": "native"
+  }
+}
+```
+
+To use Claude Code, configure an Anthropic model and set the runtime type:
+
+```json
+{
+  "model": {
+    "provider": "anthropic",
+    "model": "claude-sonnet-5"
+  },
+  "runtime": {
+    "type": "claude-code"
+  }
+}
+```
+
+<Note>
+  Pi, Codex, and Antigravity harnesses are coming soon.
+</Note>

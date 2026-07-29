@@ -1,0 +1,23 @@
+---
+title: "Tools"
+description: "Understand the tools available to Funky agents."
+---
+
+Funky currently supports its default tools only. Agents receive the default
+toolset automatically; custom tools cannot yet be registered through an agent
+configuration.
+
+The `tool_policy` field can control supported execution behavior, but it does
+not add tools. For example, you can limit the number of agent iterations:
+
+```json
+{
+  "tool_policy": {
+    "max_iterations": 20
+  }
+}
+```
+
+If your agent needs custom capabilities, package the instructions and any
+supporting scripts or resources into a skill. See [Skills](/agent-config/skills)
+for the current status of skill configuration.

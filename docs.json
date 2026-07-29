@@ -13,6 +13,15 @@
           "index",
           "quickstart"
         ]
+      },
+      {
+        "group": "Agent Config",
+        "pages": [
+          "agent-config/model",
+          "agent-config/harness",
+          "agent-config/tools",
+          "agent-config/skills"
+        ]
       }
     ]
   }
