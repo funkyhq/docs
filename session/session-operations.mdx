@@ -1,0 +1,98 @@
+---
+title: "Session Operations"
+description: "List, retrieve, and archive sessions."
+---
+
+Use the sessions resource to inspect and manage sessions after you create them.
+
+## List sessions
+
+`list()` returns one page of sessions that are not archived. Archived sessions
+are excluded by default.
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    page = funky.sessions.list(limit=20)
+
+    for session in page.data:
+        print(session.id, session.title, session.status)
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript
+    const page = await funky.sessions.list({ limit: 20 });
+
+    for (const session of page.data) {
+      console.log(session.id, session.title, session.status);
+    }
+    ```
+  </Tab>
+</Tabs>
+
+The page includes `has_more` and `last_id` fields for cursor pagination. Use the
+auto-paginating iterator when you need every matching session:
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    for session in funky.sessions.iter():
+        print(session.id)
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript
+    for await (const session of funky.sessions.iter()) {
+      console.log(session.id);
+    }
+    ```
+  </Tab>
+</Tabs>
+
+Pass `include_archived=True` in Python or `include_archived: true` in
+TypeScript to include archived sessions.
+
+## Retrieve a session
+
+Retrieve the latest session record by its ID:
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    session = funky.sessions.retrieve("session_id")
+
+    print(session.status)
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript
+    const session = await funky.sessions.retrieve("session_id");
+
+    console.log(session.status);
+    ```
+  </Tab>
+</Tabs>
+
+## Archive a session
+
+Archive a session when you no longer need it in the default session list:
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    session = funky.sessions.archive("session_id")
+
+    print(session.status)
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript
+    const session = await funky.sessions.archive("session_id");
+
+    console.log(session.status);
+    ```
+  </Tab>
+</Tabs>
+
+The returned session has an `archived` status and is available in list results
+when `include_archived` is enabled.

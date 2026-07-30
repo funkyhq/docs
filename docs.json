@@ -30,6 +30,14 @@
           "environment-config/network",
           "environment-config/secret-manager"
         ]
+      },
+      {
+        "group": "Session",
+        "pages": [
+          "session/start-a-session",
+          "session/session-operations",
+          "session/mount-persistent-storage"
+        ]
       }
     ]
   }
