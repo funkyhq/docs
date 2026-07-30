@@ -1,0 +1,164 @@
+---
+title: "Start a Session"
+description: "Start a session and stream its response."
+---
+
+A session connects a versioned agent configuration to an environment
+configuration for one independent task or conversation.
+
+Before starting a session, create an agent and an environment and retain their
+IDs. The agent controls how the agent behaves, while the environment controls
+the sandbox where it runs.
+
+## Create the session
+
+Pass the agent ID and environment ID to `sessions.create()`. You can also add a
+title and string metadata to identify the session in your application.
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    from funky import Funky
+
+    funky = Funky()
+
+    session = funky.sessions.create(
+        agent=agent.id,
+        environment_id=environment.id,
+        title="Investigate issue 42",
+        metadata={"issue": "42"},
+    )
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript
+    import { Funky } from "funky-sdk";
+
+    const funky = new Funky();
+
+    const session = await funky.sessions.create({
+      agent: agent.id,
+      environment_id: environment.id,
+      title: "Investigate issue 42",
+      metadata: { issue: "42" },
+    });
+    ```
+  </Tab>
+</Tabs>
+
+The new session starts with a `provisioning` status while Funky prepares its
+sandbox.
+
+## Wait for the session
+
+Wait until the session is `ready` before sending its first message.
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    session = funky.sessions.wait_until_ready(
+        session.id,
+        timeout=180,
+    )
+
+    print(session.id, session.status)
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript
+    const readySession = await funky.sessions.waitUntilReady(session.id);
+
+    console.log(readySession.id, readySession.status);
+    ```
+  </Tab>
+</Tabs>
+
+## Stream the response
+
+Send a message, then follow the session's live event stream. Assistant message
+events contain the response's text content.
+
+Set `after_seq` to the sequence returned by `send_message()` or `sendMessage()`
+so the stream starts after the submitted user message.
+
+<Tabs>
+  <Tab title="Python">
+    ```python
+    from funky import (
+        AssistantMessageEvent,
+        TextContentBlock,
+        TurnCompletedEvent,
+        TurnFailedEvent,
+    )
+
+    submission = funky.sessions.send_message(
+        session.id,
+        content="Inspect the repository and identify the root cause.",
+    )
+
+    with funky.sessions.stream_events(
+        session.id,
+        after_seq=submission.seq,
+    ) as stream:
+        for event in stream:
+            if isinstance(event, AssistantMessageEvent):
+                for block in event.payload.content:
+                    if isinstance(block, TextContentBlock):
+                        print(block.text, end="", flush=True)
+            elif isinstance(event, TurnCompletedEvent):
+                print()
+                break
+            elif isinstance(event, TurnFailedEvent):
+                raise RuntimeError(event.payload.message)
+    ```
+  </Tab>
+  <Tab title="TypeScript">
+    ```typescript
+    import {
+      isSessionEvent,
+      type TextContentBlock,
+    } from "funky-sdk";
+
+    const submission = await funky.sessions.sendMessage(session.id, {
+      content: "Inspect the repository and identify the root cause.",
+    });
+
+    const stream = funky.sessions.streamEvents(session.id, {
+      after_seq: submission.seq,
+    });
+
+    try {
+      for await (const event of stream) {
+        if (isSessionEvent(event, "assistant_message")) {
+          const textBlocks = event.payload.content.filter(
+            (block): block is TextContentBlock => block.type === "text",
+          );
+
+          for (const block of textBlocks) {
+            process.stdout.write(block.text);
+          }
+        } else if (isSessionEvent(event, "turn_completed")) {
+          process.stdout.write("\n");
+          break;
+        } else if (isSessionEvent(event, "turn_failed")) {
+          throw new Error(event.payload.message);
+        }
+      }
+    } finally {
+      stream.close();
+    }
+    ```
+  </Tab>
+</Tabs>
+
+The event stream replays persisted events after `after_seq`, follows new events
+over SSE, and reconnects from the last received sequence if the connection is
+interrupted.
+
+The session records the agent version and environment ID selected when it was
+created. Start a new session for each independent task or durable conversation.
+
+<Note>
+  See [Model](/agent-config/model), [Harness](/agent-config/harness), and
+  [Network](/environment-config/network) for configuration options.
+</Note>
