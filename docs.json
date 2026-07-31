@@ -5,7 +5,9 @@
   "logo": "/logo.png",
   "favicon": "/favicon.ico",
   "colors": {
-    "primary": "#0D9373"
+    "primary": "#1B45E8",
+    "light": "#FFC531",
+    "dark": "#1B45E8"
   },
   "navigation": {
     "groups": [
