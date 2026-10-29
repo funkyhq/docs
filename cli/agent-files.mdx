@@ -1,0 +1,116 @@
+---
+title: "Agent files"
+description: "The YAML format funky apply reads from agents/."
+---
+
+Each `.yaml` or `.yml` file in `agents/` describes one agent config. The fields
+are the agent config fields of the Funky API.
+
+```yaml agents/researcher.yaml
+inference:
+  provider: anthropic
+  model: claude-sonnet-5
+  maxTokens: 2048
+systemPrompt: |
+  You are a careful research agent. Verify claims with tools.
+network:
+  type: allowlist
+  domains: [github.com, "*.githubusercontent.com"]
+packages:
+  pip: [pandas==2.2.0]
+setupCommands:
+  - git config --global user.name "Research agent"
+credentials:
+  - type: injected
+    env: GITHUB_TOKEN
+    secret: github-token
+    domains: [api.github.com]
+    header: Authorization
+    value: Bearer {secret}
+metadata:
+  team: research
+```
+
+`inference`, `systemPrompt`, and `network` are required. The other fields
+default to empty. The CLI rejects unknown fields, so a typo fails before
+anything is sent.
+
+## Name
+
+An agent is named after its file: `agents/researcher.yaml` is `researcher`. To
+use a different name, set `name:` in the file. Names use 1 to 64 letters,
+digits, `_`, and `-`, and must be unique within `agents/`.
+
+The CLI stores the name in the config's metadata as `funky.dev/name`. That is
+how the next `funky apply` finds the config to update, so don't set that key
+yourself. Renaming a file creates a new config, and the config under the old
+name stays as it is.
+
+## inference
+
+The model the agent uses.
+
+| Field | Description |
+| --- | --- |
+| `provider` | The model provider, such as `anthropic`. |
+| `model` | The model ID, such as `claude-sonnet-5`. |
+| `maxTokens` | Optional. The most tokens the model may generate per step. |
+| `temperature` | Optional. The sampling temperature. |
+
+See [Model](/agent-config/model) for the supported providers and models.
+
+## systemPrompt
+
+The agent's instructions. Use a YAML block scalar (`|`) for prompts that span
+several lines.
+
+## network
+
+Which domains the agent's sandbox can reach.
+
+| `type` | Access |
+| --- | --- |
+| `unrestricted` | Any domain. |
+| `none` | No outbound network access. |
+| `allowlist` | Only the hosts in `domains`. Use `*.example.com` to allow subdomains. |
+
+## packages
+
+Packages installed into the sandbox before the agent starts working, keyed by
+package manager. Each spec uses that package manager's own syntax.
+
+```yaml
+packages:
+  apt: [graphviz]
+  pip: [pandas==2.2.0]
+  npm: [express@4.18.0]
+```
+
+`apt`, `pip`, and `npm` are supported. Pin versions to control them: an
+unpinned spec resolves once, the first time the package set is built.
+
+## setupCommands
+
+Shell commands that run after the packages install, in order, each in its own
+shell. They run once when the sandbox image is built, not once per session, so
+they don't have access to credentials.
+
+## credentials
+
+Credentials let the agent call an API with a secret it can't read. Outside the
+sandbox, Funky sets the header on HTTPS requests to the listed hosts. Inside, the
+environment variable only holds a placeholder.
+
+| Field | Description |
+| --- | --- |
+| `type` | Always `injected`. |
+| `env` | The environment variable the agent sees. It holds a placeholder, not the secret. |
+| `secret` | The name of a secret stored in your Funky project. The CLI does not create secrets. |
+| `domains` | The hosts that receive the secret. |
+| `header` | The request header to set, such as `Authorization`. |
+| `value` | The header value. `{secret}` is replaced with the secret. |
+
+## metadata
+
+Your own key-value pairs, stored with the config. `funky.dev/name` is
+reserved for the CLI.
