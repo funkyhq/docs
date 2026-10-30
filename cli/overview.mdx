@@ -1,0 +1,168 @@
+---
+title: "Funky CLI"
+description: "Manage your agent configs as code from the terminal."
+---
+
+The `funky` CLI keeps your agent configs in YAML files next to your code. You
+describe each agent in a file, and `funky apply` creates or updates it in your
+Funky Cloud project. It works like Terraform, but for agent configs.
+
+```bash
+funky login      # sign in through your browser
+funky init       # create an agents/ folder
+funky apply      # create or update the configs in agents/
+```
+
+## Install
+
+<Tabs>
+  <Tab title="npm">
+    ```bash
+    npm install -g @funky-dev/cli
+    ```
+
+    To run it without installing, use `npx @funky-dev/cli` in place of `funky`.
+  </Tab>
+  <Tab title="Shell script">
+    For macOS and Linux:
+
+    ```bash
+    curl -fsSL https://funky.dev/install.sh | sh
+    ```
+
+    The script installs `funky` into `~/.local/bin`. Set `FUNKY_INSTALL_DIR` to
+    choose another folder, or `FUNKY_VERSION` (for example `v0.1.1`) to pin a
+    version.
+  </Tab>
+  <Tab title="Binary">
+    Download the archive for your platform from the
+    [latest release](https://github.com/funkyhq/cli/releases/latest), extract
+    it, and put `funky` (`funky.exe` on Windows) on your `PATH`. Each release
+    lists SHA-256 checksums in `checksums.txt`.
+  </Tab>
+  <Tab title="Go">
+    ```bash
+    go install github.com/funkyhq/cli/cmd/funky@latest
+    ```
+  </Tab>
+</Tabs>
+
+Builds are available for macOS, Linux, and Windows on x64 and arm64. Run
+`funky --version` to check which version you have.
+
+## Log in
+
+```bash
+funky login
+```
+
+Your browser opens to Funky. Sign in, choose the project the CLI should act on,
+and approve the login. The page then tells you to return to the terminal.
+
+- The CLI acts as you, in one project. Run `funky login` again to switch
+  projects.
+- The login lasts 90 days and is stored in your operating system's keychain.
+- `funky whoami` shows the account and project the CLI is using.
+- `funky logout` signs the CLI out. You can also revoke a CLI login under
+  **Settings** in the [Funky platform](https://platform.funky.dev).
+
+On a machine without a browser, such as over SSH, run
+`funky login --no-browser`. The CLI prints a link to open on another device and
+asks for the code the page shows.
+
+## Manage agents as code
+
+<Steps>
+  <Step title="Create the project structure">
+    ```bash
+    funky init
+    ```
+
+    This creates an `agents/` folder in the current directory.
+  </Step>
+
+  <Step title="Describe an agent">
+    Add one YAML file per agent config to `agents/`. The file name is the
+    agent's name.
+
+    ```yaml agents/researcher.yaml
+    inference:
+      provider: anthropic
+      model: claude-sonnet-5
+    systemPrompt: |
+      You are a careful research agent. Verify claims with tools.
+    network:
+      type: allowlist
+      domains: [github.com, "*.githubusercontent.com"]
+    ```
+
+    See [Agent files](/cli/agent-files) for every field.
+  </Step>
+
+  <Step title="Apply">
+    ```bash
+    funky apply
+    ```
+
+    The CLI compares your files with the project and shows a plan:
+
+    ```text
+    Plan for Acme / Production:
+
+      + researcher  create     agents/researcher.yaml
+      ~ reviewer    update     2c5e1f0a-… v3: systemPrompt, network
+        triage      unchanged  91b7d4c2-… v1
+
+    Plan: 1 to create, 1 to update, 1 unchanged.
+
+    Apply these changes? Only 'yes' will be accepted: yes
+    ```
+
+    Type `yes` to apply it. For updates, the plan lists the fields that
+    changed.
+  </Step>
+</Steps>
+
+### How apply works
+
+- **New files** create agent configs.
+- **Changed files** update their agent config. Only the changed fields are
+  sent, so each apply adds at most one version to a config.
+- **Unchanged files** are left alone.
+- **Concurrent edits are detected.** Each update is pinned to the version the
+  plan saw. If someone changes the config in the meantime, apply stops with a
+  conflict instead of overwriting their change.
+- **Nothing is archived.** Deleting a file leaves its agent config in place.
+
+| Flag | Effect |
+| --- | --- |
+| `--dry-run` | Show the plan without applying it. |
+| `--auto-approve` | Apply without asking for confirmation. |
+
+## Use in CI
+
+In CI, use an API key instead of `funky login`. Create one on the
+[API keys](https://platform.funky.dev/api-keys) page and set it as
+`FUNKY_API_KEY`. When it is set, the CLI uses it instead of any login, and acts
+on the key's project.
+
+```yaml .github/workflows/agents.yml
+name: Apply agent configs
+
+on:
+  push:
+    branches: [main]
+    paths: ["agents/**"]
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npx @funky-dev/cli apply --auto-approve
+        env:
+          FUNKY_API_KEY: ${{ secrets.FUNKY_API_KEY }}
+```
+
+To review changes before merging, run `npx @funky-dev/cli apply --dry-run` on
+pull requests.
